@@ -1,20 +1,25 @@
 <?php
 
-// 1. Prepare /tmp directories for serverless Vercel execution
-$tmpViews = '/tmp/views';
-@mkdir($tmpViews, 0755, true);
-@mkdir('/tmp/sessions', 0755, true);
-@mkdir('/tmp/cache', 0755, true);
+// 1. Prepare writable serverless storage directories in Vercel /tmp
+$tmpStorage = '/tmp/storage';
+@mkdir($tmpStorage . '/framework/views', 0755, true);
+@mkdir($tmpStorage . '/framework/sessions', 0755, true);
+@mkdir($tmpStorage . '/framework/cache', 0755, true);
+@mkdir($tmpStorage . '/logs', 0755, true);
 
-putenv('VIEW_COMPILED_PATH=' . $tmpViews);
-$_ENV['VIEW_COMPILED_PATH'] = $tmpViews;
-$_SERVER['VIEW_COMPILED_PATH'] = $tmpViews;
+// 2. Set environment variables for serverless runtime
+putenv('VIEW_COMPILED_PATH=' . $tmpStorage . '/framework/views');
+$_ENV['VIEW_COMPILED_PATH'] = $tmpStorage . '/framework/views';
+$_SERVER['VIEW_COMPILED_PATH'] = $tmpStorage . '/framework/views';
 
-// 2. Normalize SCRIPT_NAME for Vercel route matching
+putenv('LOG_CHANNEL=stderr');
+$_ENV['LOG_CHANNEL'] = 'stderr';
+$_SERVER['LOG_CHANNEL'] = 'stderr';
+
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 $_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/../public/index.php';
 
-// 3. Ensure fallback APP_KEY is present
+// 3. Fallback APP_KEY if missing in Vercel Environment Variables
 if (empty(getenv('APP_KEY')) && empty($_ENV['APP_KEY']) && empty($_SERVER['APP_KEY'])) {
     $key = 'base64:Y8/mqfFebKnPT5HKJjJFU8e5XGQmP7RUsmzQrXW5L9g=';
     putenv("APP_KEY={$key}");
@@ -40,5 +45,12 @@ if (empty(getenv('DB_HOST')) && empty($_ENV['DB_HOST']) && empty($_SERVER['DB_HO
     $_SERVER['DB_DATABASE'] = $sqliteDb;
 }
 
-// 5. Delegate request handling to public/index.php
-require __DIR__ . '/../public/index.php';
+// 5. Bootstrap Laravel application and redirect storage path to /tmp/storage
+define('LARAVEL_START', microtime(true));
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+$app->useStoragePath($tmpStorage);
+
+$app->handleRequest(Illuminate\Http\Request::capture());
