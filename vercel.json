@@ -20,13 +20,9 @@
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": "false",
         "LOG_CHANNEL": "stderr",
-        "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
-        "APP_SERVICES_CACHE": "/tmp/storage/bootstrap/services.php",
-        "APP_PACKAGES_CACHE": "/tmp/storage/bootstrap/packages.php",
-        "APP_CONFIG_CACHE": "/tmp/storage/bootstrap/config.php",
-        "APP_ROUTES_CACHE": "/tmp/storage/bootstrap/routes.php",
+        "VIEW_COMPILED_PATH": "/tmp",
         "CACHE_STORE": "array",
         "SESSION_DRIVER": "cookie"
     }
