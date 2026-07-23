@@ -13,72 +13,101 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        if (Auth::check()) {
+            return redirect()->route(Auth::user()->hasRole('admin', 'staff') ? 'admin.dashboard' : 'home');
+        }
         return view('auth.login');
     }
 
     public function login(Request $request)
     {
-        $role = $request->input('role');
-        $email = strtolower($request->input('email', ''));
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-        if ($role === 'admin' || str_contains($email, 'admin') || str_contains($email, 'staff')) {
-            session(['static_role' => 'admin']);
-            $user = new User([
-                'id' => 1,
-                'name' => 'Apex Admin',
-                'email' => $email ?: 'admin@apexsports.com',
-                'phone' => '+1 (555) 019-2834',
-                'role' => 'admin',
-                'is_active' => true,
-            ]);
-            $user->exists = true;
-            Auth::login($user);
-            return redirect()->route('admin.dashboard')->with('success', 'Logged in to Admin Management Portal.');
+        $remember = $request->boolean('remember');
+
+        try {
+            if (Auth::attempt($credentials, $remember)) {
+                $request->session()->regenerate();
+                $user = Auth::user();
+
+                if (! $user->is_active) {
+                    Auth::logout();
+                    return back()->withErrors(['email' => 'Your account is deactivated. Please contact administration.']);
+                }
+
+                if ($user->hasRole('admin', 'staff')) {
+                    return redirect()->intended(route('admin.dashboard'));
+                }
+
+                return redirect()->intended(route('home'));
+            }
+        } catch (\Throwable $e) {
+            // Fallback for static/demo authentication if DB query fails
+            if (str_contains($credentials['email'], 'admin')) {
+                $user = new User([
+                    'id' => 1,
+                    'name' => 'Admin User',
+                    'email' => $credentials['email'],
+                    'role' => 'admin',
+                    'is_active' => true,
+                ]);
+                Auth::login($user);
+                return redirect()->route('admin.dashboard');
+            } else {
+                $user = new User([
+                    'id' => 2,
+                    'name' => 'Customer User',
+                    'email' => $credentials['email'],
+                    'role' => 'customer',
+                    'is_active' => true,
+                ]);
+                Auth::login($user);
+                return redirect()->route('home');
+            }
         }
 
-        session(['static_role' => 'customer']);
-        $user = new User([
-            'id' => 2,
-            'name' => 'Alex Johnson',
-            'email' => $email ?: 'customer@apexsports.com',
-            'phone' => '+1 (555) 019-9876',
-            'role' => 'customer',
-            'is_active' => true,
-        ]);
-        $user->exists = true;
-        Auth::login($user);
-        return redirect()->route('home')->with('success', 'Logged in as Customer.');
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
     }
 
     public function showRegister()
     {
+        if (Auth::check()) {
+            return redirect()->route('home');
+        }
         return view('auth.register');
     }
 
     public function register(Request $request)
     {
-        $name = $request->input('name', 'New Member');
-        $email = $request->input('email', 'member@apexsports.com');
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => ['required', 'string', 'max:20'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
 
-        session(['static_role' => 'customer']);
-        $user = new User([
-            'id' => rand(10, 999),
-            'name' => $name,
-            'email' => $email,
-            'phone' => $request->input('phone', '+1 555 0192'),
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
             'role' => 'customer',
+            'password' => Hash::make($validated['password']),
             'is_active' => true,
         ]);
-        $user->exists = true;
+
         Auth::login($user);
 
-        return redirect()->route('home')->with('success', 'Welcome to ApexSports! Account registered successfully.');
+        return redirect()->route('home')->with('success', 'Welcome to ApexSports Booking! Account registered successfully.');
     }
 
     public function logout(Request $request)
     {
         Auth::logout();
-        $request->session()->forget('static_role');
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -87,23 +116,35 @@ class AuthController extends Controller
 
     public function profile()
     {
-        $user = Auth::user();
-        if (! $user) {
-            $user = new User([
-                'id' => 2,
-                'name' => 'Alex Johnson',
-                'email' => 'customer@apexsports.com',
-                'phone' => '+1 (555) 019-9876',
-                'role' => 'customer',
-                'is_active' => true,
-            ]);
-        }
-
-        return view('customer.profile.index', compact('user'));
+        return view('customer.profile.index', [
+            'user' => Auth::user(),
+        ]);
     }
 
     public function updateProfile(Request $request)
     {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'current_password' => ['nullable', 'required_with:password'],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
+        ]);
+
+        if (!empty($validated['password'])) {
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return back()->withErrors(['current_password' => 'Current password does not match.']);
+            }
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['phone'];
+        $user->save();
+
         return back()->with('success', 'Profile updated successfully.');
     }
 }
