@@ -1,0 +1,8 @@
+/vendor
+/node_modules
+/storage/*.key
+/.env
+/.env.local
+/database/database.sqlite
+.git
+.gitignore
