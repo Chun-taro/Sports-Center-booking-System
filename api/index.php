@@ -6,7 +6,6 @@ $tmpStorage = '/tmp/storage';
 @mkdir($tmpStorage . '/framework/sessions', 0755, true);
 @mkdir($tmpStorage . '/framework/cache', 0755, true);
 @mkdir($tmpStorage . '/logs', 0755, true);
-@mkdir('/tmp/views', 0755, true);
 
 // 2. Set environment variables for serverless runtime
 putenv('VIEW_COMPILED_PATH=' . $tmpStorage . '/framework/views');
@@ -31,10 +30,9 @@ if (empty(getenv('APP_KEY')) && empty($_ENV['APP_KEY']) && empty($_SERVER['APP_K
 // 4. Fallback SQLite Database setup in /tmp
 if (empty(getenv('DB_HOST')) && empty($_ENV['DB_HOST']) && empty($_SERVER['DB_HOST'])) {
     $sqliteDb = '/tmp/database.sqlite';
-    $sourceDb = __DIR__ . '/../database/database.sqlite';
     if (!file_exists($sqliteDb) || filesize($sqliteDb) < 100) {
-        if (file_exists($sourceDb) && filesize($sourceDb) > 100) {
-            @copy($sourceDb, $sqliteDb);
+        if (file_exists(__DIR__ . '/../database/database.sqlite')) {
+            @copy(__DIR__ . '/../database/database.sqlite', $sqliteDb);
         } else {
             @touch($sqliteDb);
         }
