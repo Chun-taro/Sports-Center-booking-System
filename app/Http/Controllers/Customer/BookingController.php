@@ -19,14 +19,7 @@ class BookingController extends Controller
 {
     public function wizard(Request $request)
     {
-        try {
-            $facilities = Facility::where('is_active', true)->with('courts')->get();
-            if ($facilities->isEmpty()) {
-                $facilities = SampleDataService::getFacilities();
-            }
-        } catch (\Throwable $e) {
-            $facilities = SampleDataService::getFacilities();
-        }
+        $facilities = Facility::where('is_active', true)->with('courts')->get();
         $selectedFacilityId = $request->input('facility_id', $facilities->first()?->id);
         $selectedFacility = $facilities->firstWhere('id', $selectedFacilityId) ?? $facilities->first();
 
@@ -35,19 +28,10 @@ class BookingController extends Controller
 
     public function getCourts(Request $request)
     {
-        try {
-            $facilityId = $request->input('facility_id');
-            $courts = Court::where('facility_id', $facilityId)
-                ->where('status', 'active')
-                ->get(['id', 'name', 'capacity', 'hourly_rate_override']);
-            if ($courts->isEmpty()) {
-                $facility = SampleDataService::getFacilities()->firstWhere('id', $facilityId) ?? SampleDataService::getFacilities()->first();
-                $courts = $facility->courts;
-            }
-        } catch (\Throwable $e) {
-            $facility = SampleDataService::getFacilities()->firstWhere('id', $request->input('facility_id', 1)) ?? SampleDataService::getFacilities()->first();
-            $courts = $facility->courts;
-        }
+        $facilityId = $request->input('facility_id');
+        $courts = Court::where('facility_id', $facilityId)
+            ->where('status', 'active')
+            ->get(['id', 'name', 'capacity', 'hourly_rate_override']);
 
         return response()->json([
             'success' => true,
