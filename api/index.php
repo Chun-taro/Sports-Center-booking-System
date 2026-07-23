@@ -10,7 +10,11 @@ putenv('VIEW_COMPILED_PATH=' . $tmpViews);
 $_ENV['VIEW_COMPILED_PATH'] = $tmpViews;
 $_SERVER['VIEW_COMPILED_PATH'] = $tmpViews;
 
-// 2. Ensure fallback APP_KEY is present
+// 2. Normalize SCRIPT_NAME for Vercel route matching
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/../public/index.php';
+
+// 3. Ensure fallback APP_KEY is present
 if (empty(getenv('APP_KEY')) && empty($_ENV['APP_KEY']) && empty($_SERVER['APP_KEY'])) {
     $key = 'base64:Y8/mqfFebKnPT5HKJjJFU8e5XGQmP7RUsmzQrXW5L9g=';
     putenv("APP_KEY={$key}");
@@ -18,7 +22,7 @@ if (empty(getenv('APP_KEY')) && empty($_ENV['APP_KEY']) && empty($_SERVER['APP_K
     $_SERVER['APP_KEY'] = $key;
 }
 
-// 3. Fallback SQLite Database setup in /tmp
+// 4. Fallback SQLite Database setup in /tmp
 if (empty(getenv('DB_HOST')) && empty($_ENV['DB_HOST']) && empty($_SERVER['DB_HOST'])) {
     $sqliteDb = '/tmp/database.sqlite';
     if (!file_exists($sqliteDb) || filesize($sqliteDb) < 100) {
@@ -36,5 +40,5 @@ if (empty(getenv('DB_HOST')) && empty($_ENV['DB_HOST']) && empty($_SERVER['DB_HO
     $_SERVER['DB_DATABASE'] = $sqliteDb;
 }
 
-// 4. Delegate request handling to public/index.php
+// 5. Delegate request handling to public/index.php
 require __DIR__ . '/../public/index.php';
