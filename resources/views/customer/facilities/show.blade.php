@@ -26,7 +26,7 @@
                     <p class="text-secondary fs-6 lh-lg mb-4">{{ $facility->description }}</p>
 
                     <h4 class="font-heading fw-bold mb-3">Courts Included</h4>
-                    <div class="row g-3">
+                    <div class="row g-3 mb-4">
                         @foreach($facility->courts as $court)
                             <div class="col-md-6">
                                 <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
@@ -43,6 +43,18 @@
                                 </div>
                             </div>
                         @endforeach
+                    </div>
+
+                    <!-- Interactive Customer Availability Schedule -->
+                    <div class="pt-4 border-top">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h4 class="font-heading fw-bold mb-1"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Real-Time Reservation Schedule</h4>
+                                <p class="text-muted small mb-0">Visually inspect reserved hours/days across courts before booking.</p>
+                            </div>
+                            <span class="badge bg-secondary text-white px-3 py-2"><i class="fa-solid fa-lock me-1"></i> Privacy Protected</span>
+                        </div>
+                        <div id="customerCalendar" class="bg-white p-3 border rounded-4"></div>
                     </div>
                 </div>
             </div>
@@ -79,3 +91,40 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('customerCalendar');
+        if (!calendarEl) return;
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            slotMinTime: "{{ $facility->open_time }}",
+            slotMaxTime: "{{ $facility->close_time }}",
+            events: "{{ route('facilities.calendar-events', $facility->slug) }}",
+            eventClick: function(info) {
+                Swal.fire({
+                    title: 'Time Slot Reserved',
+                    text: `${info.event.title} is already booked for this time slot.`,
+                    icon: 'info',
+                    confirmButtonText: 'Reserve Open Slot',
+                    confirmButtonColor: '#10b981'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ route('customer.bookings.wizard', ['facility_id' => $facility->id]) }}";
+                    }
+                });
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+@endpush
