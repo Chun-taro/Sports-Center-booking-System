@@ -5,13 +5,32 @@ $tmpStorage = '/tmp/storage';
 @mkdir($tmpStorage . '/framework/views', 0755, true);
 @mkdir($tmpStorage . '/framework/sessions', 0755, true);
 @mkdir($tmpStorage . '/framework/cache', 0755, true);
+@mkdir($tmpStorage . '/framework/cache/data', 0755, true);
+@mkdir($tmpStorage . '/bootstrap', 0755, true);
 @mkdir($tmpStorage . '/logs', 0755, true);
 @mkdir('/tmp/views', 0755, true);
 
-// 2. Set environment variables for serverless runtime
+// 2. Set environment variables for serverless runtime storage & cache
 putenv('VIEW_COMPILED_PATH=' . $tmpStorage . '/framework/views');
+putenv('APP_SERVICES_CACHE=' . $tmpStorage . '/bootstrap/services.php');
+putenv('APP_PACKAGES_CACHE=' . $tmpStorage . '/bootstrap/packages.php');
+putenv('APP_CONFIG_CACHE=' . $tmpStorage . '/bootstrap/config.php');
+putenv('APP_ROUTES_CACHE=' . $tmpStorage . '/bootstrap/routes.php');
+putenv('APP_EVENTS_CACHE=' . $tmpStorage . '/bootstrap/events.php');
+
 $_ENV['VIEW_COMPILED_PATH'] = $tmpStorage . '/framework/views';
+$_ENV['APP_SERVICES_CACHE'] = $tmpStorage . '/bootstrap/services.php';
+$_ENV['APP_PACKAGES_CACHE'] = $tmpStorage . '/bootstrap/packages.php';
+$_ENV['APP_CONFIG_CACHE'] = $tmpStorage . '/bootstrap/config.php';
+$_ENV['APP_ROUTES_CACHE'] = $tmpStorage . '/bootstrap/routes.php';
+$_ENV['APP_EVENTS_CACHE'] = $tmpStorage . '/bootstrap/events.php';
+
 $_SERVER['VIEW_COMPILED_PATH'] = $tmpStorage . '/framework/views';
+$_SERVER['APP_SERVICES_CACHE'] = $tmpStorage . '/bootstrap/services.php';
+$_SERVER['APP_PACKAGES_CACHE'] = $tmpStorage . '/bootstrap/packages.php';
+$_SERVER['APP_CONFIG_CACHE'] = $tmpStorage . '/bootstrap/config.php';
+$_SERVER['APP_ROUTES_CACHE'] = $tmpStorage . '/bootstrap/routes.php';
+$_SERVER['APP_EVENTS_CACHE'] = $tmpStorage . '/bootstrap/events.php';
 
 putenv('LOG_CHANNEL=stderr');
 $_ENV['LOG_CHANNEL'] = 'stderr';
@@ -47,5 +66,11 @@ if (empty(getenv('DB_HOST')) && empty($_ENV['DB_HOST']) && empty($_SERVER['DB_HO
     $_SERVER['DB_DATABASE'] = $sqliteDb;
 }
 
-// 5. Forward request to public/index.php
-require __DIR__ . '/../public/index.php';
+// 5. Bootstrap Laravel and handle the request with writable storage path
+require __DIR__ . '/../vendor/autoload.php';
+/** @var \Illuminate\Foundation\Application $app */
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+$app->useStoragePath($tmpStorage);
+
+$app->handleRequest(\Illuminate\Http\Request::capture());
+
