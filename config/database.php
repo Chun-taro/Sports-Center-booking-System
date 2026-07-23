@@ -2,6 +2,12 @@
 
 use Illuminate\Support\Str;
 
+$dbHost = env('DB_HOST');
+$defaultConn = env('DB_CONNECTION', 'sqlite');
+if (empty($dbHost) || str_contains((string)$dbHost, 'your-cloud-db-host') || str_contains((string)$dbHost, 'your_')) {
+    $defaultConn = 'sqlite';
+}
+
 return [
 
     /*
@@ -16,7 +22,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => $defaultConn,
 
     /*
     |--------------------------------------------------------------------------

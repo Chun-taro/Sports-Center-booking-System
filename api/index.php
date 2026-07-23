@@ -48,7 +48,8 @@ if (empty(getenv('APP_KEY')) && empty($_ENV['APP_KEY']) && empty($_SERVER['APP_K
 }
 
 // 4. Fallback SQLite Database setup in /tmp
-if (empty(getenv('DB_HOST')) && empty($_ENV['DB_HOST']) && empty($_SERVER['DB_HOST'])) {
+$dbHost = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? ($_SERVER['DB_HOST'] ?? ''));
+if (empty($dbHost) || str_contains($dbHost, 'your-cloud-db-host') || str_contains($dbHost, 'your_')) {
     $sqliteDb = '/tmp/database.sqlite';
     $sourceDb = __DIR__ . '/../database/database.sqlite';
     if (!file_exists($sqliteDb) || filesize($sqliteDb) < 100) {
@@ -60,10 +61,13 @@ if (empty(getenv('DB_HOST')) && empty($_ENV['DB_HOST']) && empty($_SERVER['DB_HO
     }
     putenv('DB_CONNECTION=sqlite');
     putenv("DB_DATABASE={$sqliteDb}");
+    putenv('DB_HOST=');
     $_ENV['DB_CONNECTION'] = 'sqlite';
     $_ENV['DB_DATABASE'] = $sqliteDb;
+    $_ENV['DB_HOST'] = '';
     $_SERVER['DB_CONNECTION'] = 'sqlite';
     $_SERVER['DB_DATABASE'] = $sqliteDb;
+    $_SERVER['DB_HOST'] = '';
 }
 
 // 5. Bootstrap Laravel and handle the request with writable storage path
