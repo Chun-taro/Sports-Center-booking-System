@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/calendar-events', [HomeController::class, 'calendarEvents'])->name('calendar.public-events');
 Route::get('/facilities', [CustomerFacilityController::class, 'index'])->name('facilities.index');
 Route::get('/facilities/{facility}', [CustomerFacilityController::class, 'show'])->name('facilities.show');
 Route::get('/facilities/{facility}/calendar-events', [CustomerFacilityController::class, 'calendarEvents'])->name('facilities.calendar-events');
