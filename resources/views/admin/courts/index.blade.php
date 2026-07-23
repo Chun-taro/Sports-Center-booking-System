@@ -8,9 +8,11 @@
         <h2 class="font-heading fw-bold mb-1">Court Setup & Management</h2>
         <p class="text-secondary small mb-0">Manage courts per facility, rate overrides, capacity, and maintenance status.</p>
     </div>
-    <button class="btn btn-primary rounded-pill px-4 font-heading fw-bold mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addCourtModal">
-        <i class="fa-solid fa-plus me-1"></i> Add New Court
-    </button>
+    @if(auth()->user()->isAdmin())
+        <button class="btn btn-primary rounded-pill px-4 font-heading fw-bold mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addCourtModal">
+            <i class="fa-solid fa-plus me-1"></i> Add New Court
+        </button>
+    @endif
 </div>
 
 <!-- Filter Header -->
@@ -74,14 +76,18 @@
                             @endif
                         </td>
                         <td class="py-3 px-4 text-end">
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editCourtModal{{ $court->id }}" title="Edit">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <form action="{{ route('admin.courts.destroy', $court->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete court {{ addslashes($court->name) }}?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                            </form>
+                            @if(auth()->user()->isAdmin())
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editCourtModal{{ $court->id }}" title="Edit">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <form action="{{ route('admin.courts.destroy', $court->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete court {{ addslashes($court->name) }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            @else
+                                <span class="small text-muted">View Only</span>
+                            @endif
                         </td>
                     </tr>
 

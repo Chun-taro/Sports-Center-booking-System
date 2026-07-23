@@ -8,9 +8,11 @@
         <h2 class="font-heading fw-bold mb-1">Sports Facilities</h2>
         <p class="text-secondary small mb-0">Manage sports venues, rates, operating schedules, and player limits.</p>
     </div>
-    <a href="{{ route('admin.facilities.create') }}" class="btn btn-primary rounded-pill px-4 font-heading fw-bold">
-        <i class="fa-solid fa-plus me-1"></i> Add New Facility
-    </a>
+    @if(auth()->user()->isAdmin())
+        <a href="{{ route('admin.facilities.create') }}" class="btn btn-primary rounded-pill px-4 font-heading fw-bold">
+            <i class="fa-solid fa-plus me-1"></i> Add New Facility
+        </a>
+    @endif
 </div>
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -58,12 +60,16 @@
                             @endif
                         </td>
                         <td class="py-3 px-4 text-end">
-                            <a href="{{ route('admin.facilities.edit', $f->id) }}" class="btn btn-sm btn-outline-primary rounded-circle" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
-                            <form action="{{ route('admin.facilities.destroy', $f->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this facility?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                            </form>
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('admin.facilities.edit', $f->id) }}" class="btn btn-sm btn-outline-primary rounded-circle" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <form action="{{ route('admin.facilities.destroy', $f->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this facility?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            @else
+                                <span class="small text-muted">View Only</span>
+                            @endif
                         </td>
                     </tr>
                 @empty

@@ -37,10 +37,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
-| Customer Routes
+| Customer Only Routes (Strictly Role: Customer)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/booking/wizard', [CustomerBookingController::class, 'wizard'])->name('customer.bookings.wizard');
     Route::post('/booking/check-availability', [CustomerBookingController::class, 'checkAvailability'])->name('customer.bookings.check-availability');
     Route::get('/booking/get-courts', [CustomerBookingController::class, 'getCourts'])->name('customer.bookings.get-courts');
@@ -56,7 +56,7 @@ Route::middleware(['auth'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Admin & Staff Routes
+| Admin & Staff Shared Management Routes
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->name('admin.')->group(function () {
@@ -66,16 +66,14 @@ Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->name('admin.')
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
 
-    // Facilities
-    Route::resource('facilities', AdminFacilityController::class);
+    // Facilities (View list allowed for Staff & Admin)
+    Route::get('/facilities', [AdminFacilityController::class, 'index'])->name('facilities.index');
+    Route::get('/facilities/{facility}', [AdminFacilityController::class, 'show'])->name('facilities.show');
 
-    // Courts
+    // Courts (View list allowed for Staff & Admin)
     Route::get('/courts', [CourtController::class, 'index'])->name('courts.index');
-    Route::post('/courts', [CourtController::class, 'store'])->name('courts.store');
-    Route::put('/courts/{court}', [CourtController::class, 'update'])->name('courts.update');
-    Route::delete('/courts/{court}', [CourtController::class, 'destroy'])->name('courts.destroy');
 
-    // Bookings Management
+    // Bookings Management (Staff & Admin)
     Route::get('/bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [AdminBookingController::class, 'show'])->name('bookings.show');
     Route::post('/bookings/{booking}/approve', [AdminBookingController::class, 'approve'])->name('bookings.approve');
@@ -84,25 +82,42 @@ Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->name('admin.')
     Route::post('/bookings/{booking}/complete', [AdminBookingController::class, 'complete'])->name('bookings.complete');
     Route::put('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus'])->name('bookings.status');
 
-    // Operating Hours & Holidays
+    // Schedules & Operating Hours (Staff & Admin)
     Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
     Route::put('/schedules/operating-hours/{facility}', [ScheduleController::class, 'updateOperatingHours'])->name('schedules.operating-hours');
     Route::post('/schedules/holidays', [ScheduleController::class, 'storeHoliday'])->name('schedules.holidays.store');
     Route::delete('/schedules/holidays/{holiday}', [ScheduleController::class, 'destroyHoliday'])->name('schedules.holidays.destroy');
 
-    // Payments
+    // Payments Ledger (Staff & Admin)
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::put('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.status');
 
-    // Reports
+    // Reports (Staff & Admin)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
 
-    // Admin Only User Management
+    /*
+    |--------------------------------------------------------------------------
+    | Administrator ONLY Routes (Strictly Role: Admin)
+    |--------------------------------------------------------------------------
+    */
     Route::middleware(['role:admin'])->group(function () {
+        // User Management
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // Facility Mutation (Add, Edit, Delete)
+        Route::get('/facilities/create', [AdminFacilityController::class, 'create'])->name('facilities.create');
+        Route::post('/facilities', [AdminFacilityController::class, 'store'])->name('facilities.store');
+        Route::get('/facilities/{facility}/edit', [AdminFacilityController::class, 'edit'])->name('facilities.edit');
+        Route::put('/facilities/{facility}', [AdminFacilityController::class, 'update'])->name('facilities.update');
+        Route::delete('/facilities/{facility}', [AdminFacilityController::class, 'destroy'])->name('facilities.destroy');
+
+        // Court Mutation (Add, Edit, Delete)
+        Route::post('/courts', [CourtController::class, 'store'])->name('courts.store');
+        Route::put('/courts/{court}', [CourtController::class, 'update'])->name('courts.update');
+        Route::delete('/courts/{court}', [CourtController::class, 'destroy'])->name('courts.destroy');
     });
 });

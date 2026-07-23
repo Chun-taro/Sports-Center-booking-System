@@ -9,21 +9,30 @@ use Symfony\Component\HttpFoundation\Response;
 class RoleMiddleware
 {
     /**
-     * Handle an incoming request.
+     * Handle an incoming request based on user role boundaries.
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (! $request->user()) {
+        $user = $request->user();
+
+        if (! $user) {
             return redirect()->route('login')->with('error', 'Please log in to access this page.');
         }
 
-        if (! in_array($request->user()->role, $roles)) {
-            if ($request->user()->isAdmin()) {
-                return redirect()->route('admin.dashboard');
-            } elseif ($request->user()->isStaff()) {
-                return redirect()->route('admin.dashboard');
+        if (! in_array($user->role, $roles)) {
+            if ($user->isCustomer()) {
+                return redirect()->route('home')->with('error', 'Access Denied: Customer accounts cannot access management features.');
             }
-            return redirect()->route('home')->with('error', 'Unauthorized access.');
+
+            if ($user->isStaff()) {
+                return redirect()->route('admin.dashboard')->with('error', 'Access Denied: Staff members cannot access administrator settings.');
+            }
+
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard')->with('error', 'Access Denied: Unauthorized section.');
+            }
+
+            return redirect()->route('home')->with('error', 'Access Denied: Unauthorized access.');
         }
 
         return $next($request);
