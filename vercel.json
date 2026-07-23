@@ -1,15 +1,17 @@
 {
     "version": 2,
     "framework": null,
+    "outputDirectory": "public",
     "functions": {
         "api/index.php": {
-            "runtime": "vercel-php@0.7.2"
+            "runtime": "vercel-php@0.7.2",
+            "includeFiles": "app/**,bootstrap/**,config/**,database/**,resources/views/**,routes/**,vendor/**"
         }
     },
     "routes": [
         {
-            "src": "/(css|js|images|fonts|build|favicon.ico)/(.*)",
-            "dest": "/public/$1/$2"
+            "src": "/build/(.*)",
+            "dest": "/build/$1"
         },
         {
             "src": "/(.*)",
@@ -20,7 +22,7 @@
         "APP_ENV": "production",
         "APP_DEBUG": "false",
         "LOG_CHANNEL": "stderr",
-        "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
+        "VIEW_COMPILED_PATH": "/tmp",
         "CACHE_STORE": "array",
         "SESSION_DRIVER": "cookie"
     }
